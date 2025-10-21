@@ -1,50 +1,59 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
+fig = plt.figure(figsize=(9, 5))
+ax = fig.add_subplot(111)
 
-class NeuralNetwork:
+class ai:
 
-    def __init__(self, number_of_inputs, number_of_outputs, epochs=200):
-        self.a = number_of_inputs
-        self.b = number_of_outputs
+    def __init__(self, inputs, outputs, epochs=100):
+        self.m = inputs
+        self.n = outputs
         self.epochs = epochs
 
     def __call__(self, x, y):
         x, y = np.array(x), np.array(y)
         b = -1
+
+        self.the_errors = []
+        
         for epoch in range(self.epochs):
-            
-            # Forward Propigation
-            for layer in self.axis:
-                if layer == self.axis[0]:
-                    self.L[layer] = x.T.dot(self.W[layer]) + b
+            # Forwad Propigation
+            for i in self.axis:
+                if i == self.axis[0]:
+                    self.L[i] = x.T.dot(self.W[i]) + b
                 else:
-                    self.L[layer] = self.L[layer+1].T.dot(self.W[layer]) + b
-                self.SL[layer] = self.sigmoid(self.L[layer])
+                    self.L[i] = self.L[i+1].T @ self.W[i] + b
+                self.SL[i] = self.sigmoid(self.L[i])
 
             # Backward Propigation
             gradient = {}
-            for layer in self.raxis:
-                if layer == self.raxis[0]:
-                    error = pow(y - self.SL[layer], 2)
-                    print(error)
-                    delta = error*self.sigmoid(self.L[layer], dv=True)
-                    gradient[layer] = delta
+            for i in self.raxis:
+                if i == self.raxis[0]:
+                    error = (y - self.SL[i])**2
+                    self.the_errors.append(error.tolist())
+                    delta = error*self.sigmoid(self.L[i], dv=True)
                 else:
-                    #print(self.W[layer-1].shape, delta.shape)
-                    error = self.W[layer-1] @ delta
-                    delta = error*self.sigmoid(self.L[layer], dv=True)
-                    gradient[layer] = delta
+                    error = self.W[i-1] @ delta
+                    delta = error*self.sigmoid(self.L[i], dv=True)
+                    
+                gradient[i] = delta
+                
+            for u in self.axis:
+                self.W[u] -= gradient[u]
 
-            for layer in self.raxis:
-                self.W[layer] -= gradient[layer]
+        self.the_errors = np.array(self.the_errors)
 
-            
-            
+    def sigmoid(self, x, dv=False):
+        f = 1.0 / (1.0 + np.exp(-x))
+        if dv:
+            return f*(1 - f)
+        return f
 
-    def build(self):
-        a, b = self.a, self.b
+    def build_parameters(self):
+        m, n = self.m, self.n
 
-        self.axis = list(range(a, b, -1))
+        self.axis = list(range(m, n, -1))
         self.raxis = self.axis[::-1]
 
         self.W = {}
@@ -56,22 +65,29 @@ class NeuralNetwork:
             self.L[i] = np.zeros(i-1)
             self.SL[i] = np.zeros(i-1)
 
-    def sigmoid(self, x, dv=False):
-        f = 1.0 / (1.0 + np.exp(-x))
-        if dv:
-            return f*(1 - f)
-        return f
 
+x = [1, 1, 1, 0, 0, 0]
+y = [0.35, 0.45, 0.25]
 
+model = ai(6, 3, epochs=250)
+model.build_parameters()
 
-nnet = NeuralNetwork(5, 2)
-nnet.build()
+model(x, y)
 
-x = [0, 1, 1, 0, 1]
-y = [0.47, 0.22]
+y1, y2, y3 = [], [], []
 
-nnet(x, y)
+for x1, x2, x3 in model.the_errors:
+    y1.append(x1)
+    y2.append(x2)
+    y3.append(x3)
 
+    ax.cla()
+    ax.set_title('Neural Network Error Minimization')
+    ax.plot(y1, color='red', label='Variable 1')
+    ax.plot(y2, color='orange', label='Variable 2')
+    ax.plot(y3, color='blue', label='Variable 3')
+    ax.legend()
+    plt.pause(0.01)
 
-
+plt.show()
 
