@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 fig = plt.figure(figsize=(9, 5))
 ax = fig.add_subplot(111)
 
-class nnet:
+class ai:
 
     def __init__(self, inputs, outputs, epochs=100):
         self.m = inputs
@@ -65,7 +65,8 @@ class nnet:
             self.L[i] = np.zeros(i-1)
             self.SL[i] = np.zeros(i-1)
 
-class rnnet:
+
+class rnnai:
 
     def __init__(self, inputs, outputs, epochs=100):
         self.m = inputs
@@ -82,15 +83,17 @@ class rnnet:
             # Forwad Propigation
             for i in self.axis:
                 if i == self.axis[0]:
-                    self.L[i] = x.T.dot(self.W[i]) + b
+                    if epoch == 0:
+                        self.L[i] = x.T.dot(self.W[i]) + b
+                    else:
+                        self.L[i] = x.T.dot(self.W[i]) + b + self.rW[i] @ self.rSL[i] + b
                 else:
                     self.L[i] = self.L[i+1].T @ self.W[i] + b
                 self.SL[i] = self.sigmoid(self.L[i])
 
             for i in self.raxis:
-                self.Lr[i] = self.SL[i] @ self.Wr[i]  + b
-                self.SLr[i] = self.sigmoid(self.Lr[i])
-            
+                self.rL[i] = self.SL[i].T @ self.rW[i]
+                self.rSL[i] = self.sigmoid(self.rL[i])
 
             # Backward Propigation
             gradient = {}
@@ -107,17 +110,18 @@ class rnnet:
 
             gradient2 = {}
             for i in self.axis:
-                error = delta @ self.Wr[i]
-                delta = error*self.sigmoid(self.Lr[i], dv=True)
+                error = delta.T @ self.rW[i]
+                delta = error*self.sigmoid(self.rL[i], dv=True)
                 gradient2[i] = delta 
-
+                
             for u in self.axis:
                 self.W[u] -= gradient[u]
-            
+
             for u in self.axis:
-                self.Wr[u] -= gradient2[u]
+                self.rW[u] -= gradient2[u]
 
         self.the_errors = np.array(self.the_errors)
+        
 
     def sigmoid(self, x, dv=False):
         f = 1.0 / (1.0 + np.exp(-x))
@@ -135,43 +139,48 @@ class rnnet:
         self.L = {}
         self.SL = {}
 
-        self.Wr = {}
-        self.Lr = {}
-        self.SLr = {}
+        self.rW = {}
+        self.rL = {}
+        self.rSL = {}
 
         for i in self.axis:
             self.W[i] = np.random.random((i, i-1))
             self.L[i] = np.zeros(i-1)
             self.SL[i] = np.zeros(i-1)
-            self.Wr[i] = np.random.random((i-1, i-2))
-            self.Lr[i] = np.zeros(i-1)
-            self.SLr[i] = np.zeros(i-1)
 
-x = [1, 1, 1, 0, 0, 0]
-y = [0.35, 0.45, 0.25]
+            self.rW[i] = np.random.random((i-1, i-2))
+            self.rL[i] = np.zeros(i-1)
+            self.rSL[i] = np.zeros(i-1)
 
-modelA = rnnet(6, 3, epochs=250)
+x = [0.11, 0.33, 0.41, 0.05, 0.03, 0.6]
+y = [0.15, 0.15, 0.15]
+
+epochs = 300
+
+modelA = rnnai(len(x), len(y), epochs=epochs)
 modelA.build_parameters()
 modelA(x, y)
 
-modelB = nnet(6, 3, epochs=250)
+modelB = ai(len(x), len(y), epochs=epochs)
 modelB.build_parameters()
 modelB(x, y)
 
-rnn, fnn = [], []
-for RNN, FNN in zip(modelA.the_errors, modelB.the_errors):
-    rnn.append(np.mean(RNN))
-    fnn.append(np.mean(FNN))
+rnn = []
+fnn = []
+
+
+for I, J in zip(modelA.the_errors, modelB.the_errors):
+    rnn.append(np.mean(I))
+    fnn.append(np.mean(J))
     ax.cla()
     ax.set_title('RNN vs. FNN')
-    ax.plot(rnn, color='blue', label='RNN')
-    ax.plot(fnn, color='red', label='FNN')
+    ax.plot(rnn, color='red', label='RNN')
+    ax.plot(fnn, color='orange', label='FNN')
     ax.legend()
-    ax.set_xlabel('Epochs')
-    ax.set_ylabel('Error')
     plt.pause(0.1)
 
 plt.show()
+
 
 
 
