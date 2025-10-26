@@ -1,8 +1,51 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
 fig = plt.figure(figsize=(9, 5))
 ax = fig.add_subplot(111)
+
+class pytorch(nn.Module):
+
+    def __init__(self, inputs=6, outputs=3):
+        super(pytorch, self).__init__()
+        self.layer1 = nn.Linear(inputs, inputs-1)
+        self.sigmoid = nn.Sigmoid()
+        self.layer2 = nn.Linear(inputs-1, inputs-2)
+        self.layer3 = nn.Linear(inputs-2, outputs)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.sigmoid(x)
+        x = self.layer2(x)
+        x = self.sigmoid(x)
+        x = self.layer3(x)
+        x = self.sigmoid(x)
+        return x
+
+def PyNet(inputs, outputs, epochs=100):
+    IN = torch.tensor(inputs, dtype=torch.float32)
+    OUT = torch.tensor(outputs, dtype=torch.float32)
+    lr = 1.0
+    model = pytorch(len(inputs), len(outputs))
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    sy = []
+    for epoch in range(epochs):
+        output = model(IN)
+        loss = criterion(output, OUT)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        sy.append(loss.item())
+
+    return sy
+
+
 
 class ai:
 
@@ -159,6 +202,7 @@ class rnnai:
 x = [0.11, 0.33, 0.41, 0.05, 0.03, 0.6]
 y = [0.25, 0.15, 0.45]
 
+
 epochs = 300
 
 modelA = rnnai(len(x), len(y), epochs=epochs)
@@ -169,19 +213,24 @@ modelB = ai(len(x), len(y), epochs=epochs)
 modelB.build_parameters()
 modelB(x, y)
 
+pynn = PyNet(x, y, epochs=epochs)
+
 rnn = []
 fnn = []
+enn = []
 
 
-for I, J in zip(modelA.the_errors, modelB.the_errors):
+for I, J, K in zip(modelA.the_errors, modelB.the_errors, pynn):
     rnn.append(np.mean(I))
     fnn.append(np.mean(J))
+    enn.append(K)
     ax.cla()
     ax.set_title('RNN vs. FNN')
     ax.plot(rnn, color='red', label='RNN')
-    ax.plot(fnn, color='orange', label='FNN')
+    ax.plot(fnn, color='limegreen', label='FNN')
+    ax.plot(enn, color='blue', label='PyTorch')
     ax.legend()
-    plt.pause(0.1)
+    plt.pause(0.01)
 
 plt.show()
 
