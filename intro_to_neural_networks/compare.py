@@ -230,7 +230,7 @@ for I, J, K in zip(modelA.the_errors, modelB.the_errors, pynn):
     ax.plot(fnn, color='limegreen', label='FNN')
     ax.plot(enn, color='blue', label='PyTorch')
     ax.legend()
-    plt.pause(0.01)
+    plt.pause(0.1)
 
 plt.show()
 
